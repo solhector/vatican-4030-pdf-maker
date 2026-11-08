@@ -1,0 +1,48 @@
+name: TRIDIS v2 TrOCR - Vatican 4030 page 0051
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - scripts/ocr_tridis.py
+      - .github/workflows/tridis-0051.yml
+
+jobs:
+  recognize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: read
+    env:
+      HF_HUB_DISABLE_PROGRESS_BARS: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "4"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          df -h .
+      - name: Install CPU-only PyTorch
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --no-cache-dir "torch==2.9.0+cpu" "torchvision==0.24.0+cpu" --index-url https://download.pytorch.org/whl/cpu
+      - name: Install Kraken segmentation and Transformer inference
+        run: |
+          python -m pip install --no-cache-dir "kraken>=6,<7" "transformers==4.46.3" "accelerate>=1.0,<2" Pillow requests safetensors huggingface_hub
+          python -m pip check
+          df -h .
+      - name: Recognize full Gélis opening, image 0051
+        run: |
+          python scripts/ocr_tridis.py --width 3200 --beams 2
+      - name: Upload images, line layout and machine transcription
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tridis-v2-4030-0051
+          path: tridis_results/0051/
+          retention-days: 14
+          if-no-files-found: warn
