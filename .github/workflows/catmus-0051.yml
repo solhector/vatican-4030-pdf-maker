@@ -1,0 +1,35 @@
+name: CATMuS HTR - Vatican 4030 page 0051
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - scripts/ocr_catmus.py
+      - .github/workflows/catmus-0051.yml
+
+jobs:
+  recognize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install medieval manuscript HTR
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "kraken>=6,<7" Pillow requests PyMuPDF
+      - name: Download page 0051 if necessary and run CATMuS
+        run: |
+          python scripts/ocr_catmus.py --page 51 --width 3200 --alto
+      - name: Archive raw transcription and quality-control images
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: catmus-4030-0051
+          path: catmus_results/0051/
+          if-no-files-found: warn
+          retention-days: 14
