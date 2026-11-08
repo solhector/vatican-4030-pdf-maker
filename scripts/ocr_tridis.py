@@ -109,23 +109,39 @@ def main():
     print(f"Processing {len(lines)} lines with {MODEL_ID}", flush=True)
 
     import torch
-    from transformers import TrOCRProcessor, VisionEncoderDecoderModel, VisionEncoderDecoderConfig
+    from torch import nn
+    from transformers import TrOCRProcessor, VisionEncoderDecoderModel
+    from huggingface_hub import hf_hub_download
+    from safetensors.torch import load_file
     torch.set_num_threads(min(4, os.cpu_count() or 2))
     processor = TrOCRProcessor.from_pretrained(MODEL_ID)
-    # The upstream TRIDIS v2 config stores max_position_embeddings=514,
-    # but its weight is [514, 1024]. TrOCR automatically adds a 2-position
-    # offset: 512 + 2 = 514, so correct the metadata without changing weights.
-    config = VisionEncoderDecoderConfig.from_pretrained(MODEL_ID)
-    config.decoder.max_position_embeddings = 512
-    # The published config also says vocab_size=8000 while its saved tensor is
-    # [50265,1024]. Follow the author's model card: use tokenizer vocab size.
-    config.decoder.vocab_size = processor.tokenizer.vocab_size
-    config.vocab_size = processor.tokenizer.vocab_size
-    print("Corrected positional embedding size to 512 (+2 offset)", flush=True)
-    print("Corrected decoder vocabulary size:", config.decoder.vocab_size, flush=True)
+    # The TRIDIS author explicitly documents a nonstandard architecture:
+    # start with Microsoft's original TrOCR decoder (50265 input embeddings),
+    # add a new decoder-level embedding and an 8000-token output projection,
+    # then load TRIDIS's complete state dictionary. Loading the TRIDIS repo
+    # directly with from_pretrained fails due to inconsistent saved config.
+    print("Loading Microsoft TrOCR-large architecture", flush=True)
     model = VisionEncoderDecoderModel.from_pretrained(
-        MODEL_ID, config=config, low_cpu_mem_usage=True
+        "microsoft/trocr-large-handwritten", low_cpu_mem_usage=True
     )
+    vocab = processor.tokenizer.vocab_size
+    model.config.decoder.vocab_size = vocab
+    model.config.vocab_size = vocab
+    model.decoder.output_projection = nn.Linear(1024, vocab)
+    model.decoder.embed_tokens = nn.Embedding(vocab, 1024, padding_idx=1)
+    model.config.decoder_start_token_id = processor.tokenizer.cls_token_id
+    model.config.eos_token_id = processor.tokenizer.sep_token_id
+    model.config.pad_token_id = processor.tokenizer.pad_token_id
+    # Set generation config explicitly rather than inheriting base tokenizer.
+    model.generation_config.decoder_start_token_id = model.config.decoder_start_token_id
+    model.generation_config.eos_token_id = model.config.eos_token_id
+    model.generation_config.pad_token_id = model.config.pad_token_id
+    checkpoint = hf_hub_download(repo_id=MODEL_ID, filename="model.safetensors")
+    print("Loading TRIDIS v2 state_dict: tokenizer vocab", vocab, flush=True)
+    weights = load_file(checkpoint)
+    model.load_state_dict(weights, strict=True)
+    del weights
+    print("TRIDIS weights loaded successfully", flush=True)
     model.eval()
     model.to("cpu")
     output_records = []
