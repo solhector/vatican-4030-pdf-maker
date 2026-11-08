@@ -66,3 +66,21 @@ CATMuS is **strictly graphematic**: abbreviations and superscripts are
 checked against the original manuscript and Duvernoy's Latin edition.
 Do not publicly redistribute the Vatican images without reviewing the
 library's terms.
+
+
+## TRIDIS v2 Latin HTR pilot (new)
+
+The repo also runs the **TRIDIS v2 TrOCR** model for the opening of
+Arnaud Gélis's deposition on **Vat. lat. 4030 /0051**.
+
+- [TRIDIS pipeline](scripts/ocr_tridis.py)
+- [Full-page workflow](.github/workflows/tridis-0051.yml)
+- [Five-line smoke test](.github/workflows/tridis-smoke.yml)
+- [Raw recognized first 24 lines](results/tridis-v2/0051_pilot_24_lines.txt)
+- [Result provenance and editorial cautions](results/tridis-v2/README.md)
+
+For the **24-line pilot**, raw output is committed in the repository, while
+crops and line-coordinate JSON are in the GitHub Actions artifact.
+This output is semi-diplomatic and has **not** been verified against the
+original manuscript; never treat it as a critical edition.
+
