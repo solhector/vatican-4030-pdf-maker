@@ -109,11 +109,17 @@ def main():
     print(f"Processing {len(lines)} lines with {MODEL_ID}", flush=True)
 
     import torch
-    from transformers import TrOCRProcessor, VisionEncoderDecoderModel
+    from transformers import TrOCRProcessor, VisionEncoderDecoderModel, VisionEncoderDecoderConfig
     torch.set_num_threads(min(4, os.cpu_count() or 2))
     processor = TrOCRProcessor.from_pretrained(MODEL_ID)
+    # The upstream TRIDIS v2 config stores max_position_embeddings=514,
+    # but its weight is [514, 1024]. TrOCR automatically adds a 2-position
+    # offset: 512 + 2 = 514, so correct the metadata without changing weights.
+    config = VisionEncoderDecoderConfig.from_pretrained(MODEL_ID)
+    config.decoder.max_position_embeddings = 512
+    print("Corrected positional embedding size to 512 (+2 offset)", flush=True)
     model = VisionEncoderDecoderModel.from_pretrained(
-        MODEL_ID, low_cpu_mem_usage=True
+        MODEL_ID, config=config, low_cpu_mem_usage=True
     )
     model.eval()
     model.to("cpu")
