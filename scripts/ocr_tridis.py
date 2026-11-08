@@ -117,7 +117,12 @@ def main():
     # offset: 512 + 2 = 514, so correct the metadata without changing weights.
     config = VisionEncoderDecoderConfig.from_pretrained(MODEL_ID)
     config.decoder.max_position_embeddings = 512
+    # The published config also says vocab_size=8000 while its saved tensor is
+    # [50265,1024]. Follow the author's model card: use tokenizer vocab size.
+    config.decoder.vocab_size = processor.tokenizer.vocab_size
+    config.vocab_size = processor.tokenizer.vocab_size
     print("Corrected positional embedding size to 512 (+2 offset)", flush=True)
+    print("Corrected decoder vocabulary size:", config.decoder.vocab_size, flush=True)
     model = VisionEncoderDecoderModel.from_pretrained(
         MODEL_ID, config=config, low_cpu_mem_usage=True
     )
