@@ -139,7 +139,7 @@ def main():
     checkpoint = hf_hub_download(repo_id=MODEL_ID, filename="model.safetensors")
     print("Loading TRIDIS v2 state_dict: tokenizer vocab", vocab, flush=True)
     weights = load_file(checkpoint)
-    model.load_state_dict(weights, strict=True)
+    model.load_state_dict(weights, strict=True, assign=True)
     del weights
     print("TRIDIS weights loaded successfully", flush=True)
     model.eval()
