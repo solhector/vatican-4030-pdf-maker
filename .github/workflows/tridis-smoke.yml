@@ -1,0 +1,45 @@
+name: TRIDIS v2 five-line smoke test
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/tridis-smoke.yml
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    permissions:
+      contents: read
+    env:
+      HF_HUB_DISABLE_PROGRESS_BARS: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "4"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          df -h .
+      - name: Install CPU-only PyTorch
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --no-cache-dir "torch==2.9.0+cpu" "torchvision==0.24.0+cpu" --index-url https://download.pytorch.org/whl/cpu
+      - name: Install Kraken and TRIDIS dependencies
+        run: |
+          python -m pip install --no-cache-dir "kraken>=6,<7" "transformers==4.46.3" "accelerate>=1.0,<2" Pillow requests safetensors huggingface_hub
+      - name: Recognize first five lines
+        run: |
+          python scripts/ocr_tridis.py --width 3200 --max-lines 5 --beams 1 --out tridis_results/smoke0051
+      - name: Upload recognized Latin and line images
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tridis-v2-five-lines
+          path: tridis_results/smoke0051/
+          retention-days: 14
+          if-no-files-found: warn
