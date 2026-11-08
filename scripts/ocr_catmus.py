@@ -20,8 +20,8 @@ MODEL_URL = "https://zenodo.org/records/21488839/files/catmus-medieval-1.6.0.mlm
 MODEL_MD5 = "326a6ea675661ec9ce0bb6b1958de495"
 # Measured against the Vatican /0051 screenshot. Adjust after inspecting overlay.
 REGIONS = {
-    "01_left_start": (0.205, 0.555, 0.485, 0.840),
-    "02_right": (0.485, 0.087, 0.765, 0.845),
+    "01_left_start": (0.245, 0.553, 0.545, 0.812),
+    "02_right": (0.565, 0.118, 0.885, 0.814),
 }
 
 def request(session, url):
