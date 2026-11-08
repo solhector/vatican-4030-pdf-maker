@@ -1,0 +1,42 @@
+name: TRIDIS v2 quick pilot - first 24 lines of Vatican 0051
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/tridis-0051-quick.yml
+
+jobs:
+  pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    env:
+      HF_HUB_DISABLE_PROGRESS_BARS: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "4"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Free disk
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+      - name: CPU-only PyTorch
+        run: |
+          python -m pip install --no-cache-dir "torch==2.9.0+cpu" "torchvision==0.24.0+cpu" --index-url https://download.pytorch.org/whl/cpu
+      - name: Kraken and TRIDIS runtime
+        run: |
+          python -m pip install --no-cache-dir "kraken>=6,<7" "transformers==4.46.3" "accelerate>=1.0,<2" Pillow requests safetensors huggingface_hub
+      - name: Recognize first 24 lines with single-beam decoding
+        run: |
+          python scripts/ocr_tridis.py --width 3200 --max-lines 24 --beams 1 --out tridis_results/0051_quick
+      - name: Save pilot results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tridis-v2-0051-quick-24
+          path: tridis_results/0051_quick/
+          retention-days: 14
+          if-no-files-found: warn
