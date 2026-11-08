@@ -18,10 +18,19 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install medieval manuscript HTR
+      - name: Prepare free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          df -h .
+      - name: Install CPU-only PyTorch first (avoid huge CUDA packages)
         run: |
           python -m pip install --upgrade pip
-          python -m pip install "kraken>=6,<7" Pillow requests PyMuPDF
+          python -m pip install --no-cache-dir "torch==2.9.0+cpu" "torchvision==0.24.0+cpu" --index-url https://download.pytorch.org/whl/cpu
+      - name: Install Kraken manuscript HTR
+        run: |
+          python -m pip install --no-cache-dir "kraken>=6,<7" Pillow requests PyMuPDF
+          python -m pip check
+          df -h .
       - name: Download page 0051 if necessary and run CATMuS
         run: |
           python scripts/ocr_catmus.py --page 51 --width 3200 --alto
