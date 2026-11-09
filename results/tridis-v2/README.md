@@ -24,3 +24,10 @@ TRIDIS v2 is trained to produce semi-diplomatic, abbreviation-expanded
 transcriptions. Compare against the manuscript and Jean Duvernoy's Latin
 edition before quotation. Model output is preserved separately from any
 future editorial corrections.
+
+## Completed full 76-line recognition
+
+- [Full, uncorrected text (76 segmented lines)](0051_full_76_lines_raw.txt)
+- [Successful GitHub Actions run and its original images/JSON](https://github.com/solhector/vatican-4030-pdf-maker/actions/runs/42498682530)
+- 17 segmented lines in the left lower region, 59 in the right region.
+- This is **not a verified transcription**. Among the serious problems is a line in the right region where the model repeats `dictus` 52 times; this is generated text, not the manuscript wording. The archived raw text preserves the error for audit.
